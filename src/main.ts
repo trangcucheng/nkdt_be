@@ -37,7 +37,12 @@ async function bootstrap() {
   
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000'], // Allow frontend origins
+    origin: [
+      'http://localhost:3001', 
+      'http://localhost:3000',
+      'https://nkdt.io.vn',
+      'http://nkdt.io.vn'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
