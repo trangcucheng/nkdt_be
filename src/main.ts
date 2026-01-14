@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 // Fix for crypto is not defined error in @nestjs/schedule
 if (typeof global.crypto === 'undefined') {
@@ -9,6 +10,18 @@ if (typeof global.crypto === 'undefined') {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Enable global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // Enable transformation
+      whitelist: true, // Strip properties that don't have decorators
+      forbidNonWhitelisted: false, // Don't throw error for extra properties
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+    }),
+  );
   
   // Enable CORS for frontend
   app.enableCors({
