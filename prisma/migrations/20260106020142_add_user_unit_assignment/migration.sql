@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `unitId` INTEGER NULL;
+
+-- AddForeignKey
+ALTER TABLE `User` ADD CONSTRAINT `User_unitId_fkey` FOREIGN KEY (`unitId`) REFERENCES `Unit`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

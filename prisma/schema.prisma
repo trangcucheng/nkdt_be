@@ -1,0 +1,330 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+  SUB_ADMIN
+  MANAGER
+  CONTRIBUTOR
+}
+
+model User {
+  id           String    @id @default(uuid())
+  firstName    String?
+  lastName     String?
+  email        String    @unique
+  password     String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLogin    DateTime?
+  phoneNumber  String?   @unique
+  refreshToken String?   @db.Text // TEXT để chứa JWT dài
+  avatarUrl    String?
+  blocked      Boolean?
+  unitId       Int?      // Đơn vị công tác
+
+  // role Role @default(USER)
+  userRoles UserRole[]
+
+  // Relations
+  unit                    Unit?                   @relation(fields: [unitId], references: [id])
+  LoginHistory            LoginHistory[]
+  diaries                 Diary[]
+  diaryReactions          DiaryReaction[]
+  supportContents         SupportContent[]
+  ideologicalWorkNotes    IdeologicalWorkNote[]
+  resolvedAlerts          EmotionAlert[]
+}
+
+model Role_ {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Permission {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  description     String?
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role_      @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User  @relation(fields: [userId], references: [id])
+  role Role_ @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+}
+
+model Unit {
+  id          Int     @id @default(autoincrement())
+  code        String  @unique
+  name        String
+  description String?
+  status      String? // Active / Inactive
+
+  parentId Int?
+  parent   Unit?  @relation("UnitHierarchy", fields: [parentId], references: [id])
+  children Unit[] @relation("UnitHierarchy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  users                User[]
+  ideologicalWorkNotes IdeologicalWorkNote[]
+  emotionStatistics    EmotionStatistics[]
+  hashtagTrends        HashtagTrend[]
+  emotionAlerts        EmotionAlert[]
+}
+
+model Blacklist {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiredAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model LoginHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress String?
+  userAgent String?
+  device    String?
+  location  String? // Optional: city, country info if using IP geo service
+  createdAt DateTime @default(now())
+}
+
+model SignLog {
+  id         String   @id @default(uuid())
+  fileName   String
+  filePath   String
+  signedAt   DateTime
+  isValid    Boolean
+  signerName String?
+  issuedBy   String?
+  verifiedAt DateTime @default(now())
+}
+
+// ======== DIARY SYSTEM MODELS ========
+
+// Trạng thái cảm xúc
+enum EmotionStatus {
+  VERY_HAPPY
+  HAPPY
+  NORMAL
+  SAD
+  WORRIED
+  STRESSED
+  ANXIOUS
+  ANGRY
+  EXCITED
+  TIRED
+}
+
+// Mức độ riêng tư
+enum PrivacyLevel {
+  PRIVATE           // Chỉ cá nhân xem
+  ANONYMOUS_SHARE   // Chia sẻ ẩn danh
+  STATISTICS_ONLY   // Chỉ dùng để thống kê
+}
+
+// Loại phản ứng cảm xúc
+enum ReactionType {
+  EMPATHY      // Đồng cảm
+  SUPPORT      // Hỗ trợ
+  ENCOURAGE    // Động viên
+  UNDERSTAND   // Thấu hiểu
+}
+
+// Danh mục nội dung hỗ trợ
+enum SupportCategory {
+  EMOTION_MANAGEMENT    // Quản lý cảm xúc
+  ADAPTATION_SKILLS     // Kỹ năng thích nghi
+  MOTIVATION           // Động viên tinh thần
+  STUDY_TIPS          // Mẹo học tập
+  WORK_SKILLS         // Kỹ năng công tác
+  HEALTH_WELLNESS     // Sức khỏe tinh thần
+}
+
+// Mức độ cảnh báo
+enum AlertLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Nhật ký cá nhân
+model Diary {
+  id            String       @id @default(uuid())
+  userId        String
+  content       String       @db.Text
+  emotionStatus EmotionStatus
+  hashtags      Json?        // Lưu trữ mảng hashtag dưới dạng JSON
+  privacyLevel  PrivacyLevel @default(PRIVATE)
+  date          DateTime     // Ngày của nhật ký
+  isGuided      Boolean      @default(false) // Nhật ký dẫn dắt hay tự do
+  guidedPrompt  String?      @db.Text // Câu hỏi gợi mở nếu là nhật ký dẫn dắt
+  isQuickWrite  Boolean      @default(false) // Nhật ký viết nhanh 60 giây
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions DiaryReaction[]
+  
+  @@unique([userId, date]) // Mỗi user chỉ có 1 nhật ký mỗi ngày
+  @@index([date])
+  @@index([emotionStatus])
+  @@index([privacyLevel])
+}
+
+// Phản ứng với nhật ký ẩn danh
+model DiaryReaction {
+  id           String       @id @default(uuid())
+  diaryId      String
+  userId       String
+  reactionType ReactionType
+  createdAt    DateTime     @default(now())
+  
+  diary Diary @relation(fields: [diaryId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([diaryId, userId]) // Mỗi user chỉ react 1 lần cho 1 diary
+}
+
+// Nội dung hỗ trợ tinh thần
+model SupportContent {
+  id          String          @id @default(uuid())
+  title       String
+  content     String          @db.Text
+  category    SupportCategory
+  createdBy   String
+  isActive    Boolean         @default(true)
+  viewCount   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  creator User @relation(fields: [createdBy], references: [id])
+  
+  @@index([category])
+  @@index([isActive])
+}
+
+// Ghi chú công tác tư tưởng của cán bộ quản lý
+model IdeologicalWorkNote {
+  id                String   @id @default(uuid())
+  managerId         String
+  unitId            Int?
+  title             String
+  content           String   @db.Text
+  activities        String   @db.Text // Hoạt động đã triển khai
+  effectEvaluation  String?  @db.Text // Đánh giá hiệu quả
+  targetAudience    String?  // Đối tượng hướng đến
+  period            String?  // Thời kỳ thực hiện
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  manager User  @relation(fields: [managerId], references: [id])
+  unit    Unit? @relation(fields: [unitId], references: [id])
+  
+  @@index([managerId])
+  @@index([unitId])
+  @@index([createdAt])
+}
+
+// Thống kê cảm xúc theo đơn vị và thời gian
+model EmotionStatistics {
+  id            String        @id @default(uuid())
+  unitId        Int?
+  date          DateTime
+  emotionStatus EmotionStatus
+  count         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  unit Unit? @relation(fields: [unitId], references: [id])
+  
+  @@unique([unitId, date, emotionStatus])
+  @@index([date])
+  @@index([emotionStatus])
+}
+
+// Chủ đề/hashtag phổ biến
+model HashtagTrend {
+  id        String   @id @default(uuid())
+  hashtag   String
+  unitId    Int?
+  count     Int      @default(1)
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  unit Unit? @relation(fields: [unitId], references: [id])
+  
+  @@unique([hashtag, unitId, date])
+  @@index([hashtag])
+  @@index([date])
+  @@index([count])
+}
+
+// Cảnh báo xu hướng tiêu cực
+model EmotionAlert {
+  id             String     @id @default(uuid())
+  unitId         Int?
+  alertLevel     AlertLevel
+  title          String
+  description    String     @db.Text
+  isResolved     Boolean    @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  resolutionNote String?    @db.Text
+  actions        String?    @db.Text
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  
+  unit     Unit? @relation(fields: [unitId], references: [id])
+  resolver User? @relation(fields: [resolvedBy], references: [id])
+  
+  @@index([unitId])
+  @@index([alertLevel])
+  @@index([isResolved])
+  @@index([createdAt])
+}
