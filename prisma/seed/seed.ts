@@ -50,10 +50,9 @@ async function main() {
   console.log('✅ Units seeded.');
 
   // 2️⃣ Load permissions from JSON file
-  const permissionsData = await fs.readFile(
-    path.join(__dirname, 'permissions.json'),
-    'utf-8',
-  );
+  // Đọc từ thư mục gốc của project thay vì __dirname để tránh lỗi khi build
+  const permissionsPath = path.join(process.cwd(), 'prisma', 'seed', 'permissions.json');
+  const permissionsData = await fs.readFile(permissionsPath, 'utf-8');
   const permissions = JSON.parse(permissionsData);
 
   // Upsert permissions
