@@ -1,32 +1,36 @@
-version: "3.8"
+version: "3.9"
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: Qlcbbn!@#190298
-      MYSQL_DATABASE: nkdt
-      MYSQL_USER: nkdt_user
-      MYSQL_PASSWORD: Password@123
-    volumes:
-      - mysql_data:/var/lib/mysql
-    # ❗ Nếu KHÔNG cần connect DB từ host thì nên comment port này
-    ports:
-      - "3306:3306"
-
-  api:
-    build: .
+  nkdt-api:
     container_name: nkdt-api
+    build: .
     restart: always
     env_file:
       - .env
-    depends_on:
-      - mysql
     ports:
-      - "6062:6062"
-    command: npm start -- -p 6062
+      - "6062:3000"   # chỉ Nginx dùng
+    depends_on:
+      - nkdt-mysql
+    networks:
+      - nkdt-network
+
+  nkdt-mysql:
+    container_name: nkdt-mysql
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Root@Nkdt2026!
+      MYSQL_DATABASE: nkdt_db
+      MYSQL_USER: nkdt_user
+      MYSQL_PASSWORD: Nkdt@MySQL2026!
+    volumes:
+      - nkdt_mysql_data:/var/lib/mysql
+    networks:
+      - nkdt-network
+
+networks:
+  nkdt-network:
+    driver: bridge
 
 volumes:
-  mysql_data:
+  nkdt_mysql_data:

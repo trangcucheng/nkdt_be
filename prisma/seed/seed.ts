@@ -191,41 +191,47 @@ async function main() {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  await prisma.diary.upsert({
+  // Check nếu đã có diary cho ngày hôm nay chưa
+  const existingTodayDiary = await prisma.diary.findFirst({
     where: {
-      userId_date: {
-        userId: clientUser.id,
-        date: today,
-      },
-    },
-    update: {},
-    create: {
       userId: clientUser.id,
-      content: 'Hôm nay là một ngày tuyệt vời! Tôi đã học được nhiều điều mới về công nghệ và cảm thấy rất hạnh phúc.',
-      emotionStatus: 'HAPPY',
-      privacyLevel: 'PRIVATE',
-      hashtags: ['học_tập', 'hạnh_phúc', 'công_nghệ'],
       date: today,
     },
   });
 
-  await prisma.diary.upsert({
-    where: {
-      userId_date: {
+  if (!existingTodayDiary) {
+    await prisma.diary.create({
+      data: {
         userId: clientUser.id,
-        date: yesterday,
+        content: 'Hôm nay là một ngày tuyệt vời! Tôi đã học được nhiều điều mới về công nghệ và cảm thấy rất hạnh phúc.',
+        emotionStatus: 'HAPPY',
+        privacyLevel: 'PRIVATE',
+        hashtags: ['học_tập', 'hạnh_phúc', 'công_nghệ'],
+        date: today,
       },
-    },
-    update: {},
-    create: {
+    });
+  }
+
+  // Check nếu đã có diary cho ngày hôm qua chưa
+  const existingYesterdayDiary = await prisma.diary.findFirst({
+    where: {
       userId: clientUser.id,
-      content: 'Hôm qua hơi mệt mỏi nhưng vẫn hoàn thành tốt công việc. Cần nghỉ ngơi nhiều hơn.',
-      emotionStatus: 'TIRED',
-      privacyLevel: 'STATISTICS_ONLY',
-      hashtags: ['công_việc', 'sức_khỏe'],
       date: yesterday,
     },
   });
+
+  if (!existingYesterdayDiary) {
+    await prisma.diary.create({
+      data: {
+        userId: clientUser.id,
+        content: 'Hôm qua hơi mệt mỏi nhưng vẫn hoàn thành tốt công việc. Cần nghỉ ngơi nhiều hơn.',
+        emotionStatus: 'TIRED',
+        privacyLevel: 'STATISTICS_ONLY',
+        hashtags: ['công_việc', 'sức_khỏe'],
+        date: yesterday,
+      },
+    });
+  }
 
   console.log('✅ Sample diaries seeded.');
 
