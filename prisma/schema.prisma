@@ -210,7 +210,7 @@ model Diary {
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   reactions DiaryReaction[]
   
-  @@unique([userId, date]) // Mỗi user chỉ có 1 nhật ký mỗi ngày
+  @@index([userId, date])
   @@index([date])
   @@index([emotionStatus])
   @@index([privacyLevel])

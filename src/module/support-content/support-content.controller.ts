@@ -22,6 +22,7 @@ import { UpdateSupportContentDto } from './dto/update-support-content.dto';
 import { GetSupportContentQueryDto } from './dto/get-support-content-query.dto';
 import { CustomAuthGuard } from '../../guard/custom-auth.guard';
 import { Permissions } from '../../decorator/permissions.decorator';
+import { Public } from '../../decorator/public.decorator';
 
 @ApiTags('Support Content - Nội dung hỗ trợ tinh thần')
 @ApiBearerAuth()
@@ -44,6 +45,7 @@ export class SupportContentController {
     return this.supportContentService.create(req.user.id, createSupportContentDto);
   }
 
+  @Public()
   @Get('public')
   @ApiOperation({
     summary: 'Lấy nội dung hỗ trợ (cho user)',
@@ -53,7 +55,6 @@ export class SupportContentController {
     status: 200,
     description: 'Lấy danh sách nội dung thành công',
   })
-  @Permissions('VIEW_SUPPORT_CONTENT')
   findAllForUsers(@Query() query: GetSupportContentQueryDto) {
     return this.supportContentService.findAllForUsers(query);
   }
@@ -86,6 +87,7 @@ export class SupportContentController {
     return this.supportContentService.getStatistics();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({
     summary: 'Lấy chi tiết nội dung hỗ trợ',
@@ -95,10 +97,9 @@ export class SupportContentController {
     status: 200,
     description: 'Lấy chi tiết nội dung thành công',
   })
-  @Permissions('VIEW_SUPPORT_CONTENT')
   findOne(@Param('id') id: string, @Request() req) {
-    // Check if user has admin permissions
-    const userPermissions = req.user.permissions || [];
+    // Check if user has admin permissions (if authenticated)
+    const userPermissions = req.user?.permissions || [];
     const isAdmin = userPermissions.includes('CREATE_SUPPORT_CONTENT');
     
     return this.supportContentService.findOne(id, !isAdmin);

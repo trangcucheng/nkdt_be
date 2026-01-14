@@ -1,11 +1,32 @@
+version: "3.8"
+
 services:
-  db:
-    image: postgres:latest
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1
-      POSTGRES_DB: base_be_prisma
-    ports:
-      - '5432:5432'
+      MYSQL_ROOT_PASSWORD: Qlcbbn!@#190298
+      MYSQL_DATABASE: nkdt
+      MYSQL_USER: nkdt_user
+      MYSQL_PASSWORD: Password@123
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+    # ❗ Nếu KHÔNG cần connect DB từ host thì nên comment port này
+    ports:
+      - "3306:3306"
+
+  api:
+    build: .
+    container_name: nkdt-api
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - mysql
+    ports:
+      - "6062:6062"
+    command: npm start -- -p 6062
+
+volumes:
+  mysql_data:

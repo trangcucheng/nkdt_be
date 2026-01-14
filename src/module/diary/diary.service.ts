@@ -27,18 +27,6 @@ export class DiaryService {
     const diaryDate = date ? new Date(date) : new Date();
     diaryDate.setHours(0, 0, 0, 0); // Reset time to beginning of day
 
-    // Kiểm tra xem user đã có nhật ký cho ngày này chưa
-    const existingDiary = await this.prisma.diary.findFirst({
-      where: {
-        userId,
-        date: diaryDate,
-      },
-    });
-
-    if (existingDiary) {
-      throw new ConflictException('Bạn đã có nhật ký cho ngày này. Hãy chỉnh sửa nhật ký hiện tại thay vì tạo mới.');
-    }
-
     const diary = await this.prisma.diary.create({
       data: {
         userId,
@@ -307,6 +295,37 @@ export class DiaryService {
     });
 
     return { message: 'Đã xóa nhật ký thành công' };
+  }
+
+  /**
+   * Lấy danh sách phản ứng của nhật ký
+   */
+  async getReactions(diaryId: string) {
+    const reactions = await this.prisma.diaryReaction.findMany({
+      where: { diaryId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Group reactions by type and count
+    const reactionCounts = reactions.reduce((acc, reaction) => {
+      acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      reactions,
+      counts: reactionCounts,
+      total: reactions.length,
+    };
   }
 
   /**

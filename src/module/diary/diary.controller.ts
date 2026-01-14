@@ -218,6 +218,20 @@ export class DiaryController {
     return this.diaryService.remove(id, req.user.id);
   }
 
+  @Get(':id/reactions')
+  @ApiOperation({
+    summary: 'Lấy danh sách phản ứng của nhật ký',
+    description: 'Lấy tất cả phản ứng cho một nhật ký'
+  })
+  @ApiParam({ name: 'id', description: 'ID của nhật ký' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách phản ứng thành công',
+  })
+  getReactions(@Param('id') id: string) {
+    return this.diaryService.getReactions(id);
+  }
+
   @Post(':id/reactions')
   @ApiOperation({
     summary: 'Thêm phản ứng cho nhật ký',
