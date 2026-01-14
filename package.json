@@ -97,7 +97,7 @@
     "testEnvironment": "node"
   },
   "prisma": {
-    "seed": "ts-node --compiler-options {\\\"module\\\":\\\"commonjs\\\"} prisma/seed/seed.ts"
+    "seed": "ts-node prisma/seed/seed.ts"
   },
   "ts-node": {
     "compilerOptions": {
