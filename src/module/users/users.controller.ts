@@ -28,6 +28,7 @@ import * as path from 'path';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { Public } from 'src/decorator/public.decorator';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
+import { ChangePasswordDTO } from './dto/change-password.dto';
 
 @ApiBearerAuth('access-token') // Use the name defined in main.ts
 @Controller('users')
@@ -256,5 +257,27 @@ export class UsersController {
     }
     const avatarUrl = `/uploads/avatar/${file.filename}`;
     return this.userService.uploadAvatar(req.user.id, avatarUrl);
+  }
+
+  @Post('/import-users')
+  @UseGuards(JwtAuthGuard)
+  async importUsers(@Body() body: { users: any[] }) {
+    if (!body.users || !Array.isArray(body.users)) {
+      throw new BadRequestException('Invalid request body. Expected { users: [] }');
+    }
+    return this.userService.importUsers(body.users);
+  }
+
+  @Post('/change-password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Request() req: any,
+    @Body() changePasswordDto: ChangePasswordDTO,
+  ) {
+    return this.userService.changePassword(
+      req.user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
   }
 }
