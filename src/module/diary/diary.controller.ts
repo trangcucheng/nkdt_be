@@ -23,6 +23,7 @@ import { CreateDiaryDto } from './dto/create-diary.dto';
 import { UpdateDiaryDto } from './dto/update-diary.dto';
 import { GetDiariesQueryDto } from './dto/get-diaries-query.dto';
 import { CreateDiaryReactionDto } from './dto/create-diary-reaction.dto';
+import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { DiaryResponseDto, PaginatedDiariesResponseDto } from './dto/diary-response.dto';
 import { CustomAuthGuard } from '../../guard/custom-auth.guard';
 import { Public } from 'src/decorator/public.decorator';
@@ -274,5 +275,84 @@ export class DiaryController {
   })
   removeReaction(@Param('id') id: string, @Request() req) {
     return this.diaryService.removeReaction(id, req.user.id);
+  }
+
+  // ========== COMMENT ENDPOINTS ==========
+
+  @Get(':id/comments')
+  @Public()
+  @ApiOperation({
+    summary: 'Lấy danh sách bình luận',
+    description: 'Lấy tất cả bình luận của một nhật ký'
+  })
+  @ApiParam({ name: 'id', description: 'ID của nhật ký' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách bình luận thành công',
+  })
+  getComments(@Param('id') id: string) {
+    return this.diaryService.getComments(id);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({
+    summary: 'Thêm bình luận',
+    description: 'Thêm bình luận cho nhật ký được chia sẻ ẩn danh'
+  })
+  @ApiParam({ name: 'id', description: 'ID của nhật ký' })
+  @ApiResponse({
+    status: 201,
+    description: 'Thêm bình luận thành công',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy nhật ký',
+  })
+  addComment(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() createCommentDto: CreateCommentDto,
+  ) {
+    return this.diaryService.addComment(id, req.user.id, createCommentDto);
+  }
+
+  @Patch('comments/:commentId')
+  @ApiOperation({
+    summary: 'Cập nhật bình luận',
+    description: 'Cập nhật nội dung bình luận của chính mình'
+  })
+  @ApiParam({ name: 'commentId', description: 'ID của bình luận' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật bình luận thành công',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền cập nhật bình luận này',
+  })
+  updateComment(
+    @Param('commentId') commentId: string,
+    @Request() req,
+    @Body() updateCommentDto: UpdateCommentDto,
+  ) {
+    return this.diaryService.updateComment(commentId, req.user.id, updateCommentDto);
+  }
+
+  @Delete('comments/:commentId')
+  @ApiOperation({
+    summary: 'Xóa bình luận',
+    description: 'Xóa bình luận của chính mình hoặc admin có thể xóa bất kỳ bình luận nào'
+  })
+  @ApiParam({ name: 'commentId', description: 'ID của bình luận' })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa bình luận thành công',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không có quyền xóa bình luận này',
+  })
+  deleteComment(@Param('commentId') commentId: string, @Request() req) {
+    return this.diaryService.deleteComment(commentId, req.user.id, req.user.roles || []);
   }
 }

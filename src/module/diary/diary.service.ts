@@ -10,6 +10,7 @@ import { CreateDiaryDto } from './dto/create-diary.dto';
 import { UpdateDiaryDto } from './dto/update-diary.dto';
 import { GetDiariesQueryDto } from './dto/get-diaries-query.dto';
 import { CreateDiaryReactionDto } from './dto/create-diary-reaction.dto';
+import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { PrivacyLevel } from '@prisma/client';
 import { getPromptOfTheDay, getRandomPrompt, getPromptsByCategory } from './constants/guided-prompts';
 
@@ -535,5 +536,134 @@ export class DiaryService {
 
     // Default: câu hỏi của ngày
     return getPromptOfTheDay();
+  }
+
+  // ========== COMMENT METHODS ==========
+
+  /**
+   * Lấy danh sách bình luận của một nhật ký
+   */
+  async getComments(diaryId: string) {
+    const comments = await this.prisma.diaryComment.findMany({
+      where: { diaryId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return comments;
+  }
+
+  /**
+   * Thêm bình luận cho nhật ký
+   */
+  async addComment(diaryId: string, userId: string, createCommentDto: CreateCommentDto) {
+    // Kiểm tra diary có tồn tại và được chia sẻ không
+    const diary = await this.prisma.diary.findUnique({
+      where: { id: diaryId },
+    });
+
+    if (!diary) {
+      throw new NotFoundException('Không tìm thấy nhật ký');
+    }
+
+    // Chỉ cho phép comment trên diary được chia sẻ ẩn danh
+    if (diary.privacyLevel !== PrivacyLevel.ANONYMOUS_SHARE) {
+      throw new ForbiddenException('Chỉ có thể bình luận trên nhật ký được chia sẻ ẩn danh');
+    }
+
+    const comment = await this.prisma.diaryComment.create({
+      data: {
+        diaryId,
+        userId,
+        content: createCommentDto.content,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return comment;
+  }
+
+  /**
+   * Cập nhật bình luận
+   */
+  async updateComment(commentId: string, userId: string, updateCommentDto: UpdateCommentDto) {
+    const comment = await this.prisma.diaryComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Không tìm thấy bình luận');
+    }
+
+    // Chỉ chủ sở hữu mới được cập nhật
+    if (comment.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật bình luận này');
+    }
+
+    const updatedComment = await this.prisma.diaryComment.update({
+      where: { id: commentId },
+      data: {
+        content: updateCommentDto.content,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return updatedComment;
+  }
+
+  /**
+   * Xóa bình luận
+   * User có thể xóa bình luận của mình
+   * Admin có thể xóa bất kỳ bình luận nào
+   */
+  async deleteComment(commentId: string, userId: string, userRoles: string[]) {
+    const comment = await this.prisma.diaryComment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('Không tìm thấy bình luận');
+    }
+
+    const isAdmin = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN');
+    const isOwner = comment.userId === userId;
+
+    // Chỉ chủ sở hữu hoặc admin mới được xóa
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Bạn không có quyền xóa bình luận này');
+    }
+
+    await this.prisma.diaryComment.delete({
+      where: { id: commentId },
+    });
+
+    return { message: 'Xóa bình luận thành công' };
   }
 }

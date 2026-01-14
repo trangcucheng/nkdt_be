@@ -46,6 +46,7 @@ model User {
   LoginHistory            LoginHistory[]
   diaries                 Diary[]
   diaryReactions          DiaryReaction[]
+  diaryComments           DiaryComment[]
   supportContents         SupportContent[]
   ideologicalWorkNotes    IdeologicalWorkNote[]
   resolvedAlerts          EmotionAlert[]
@@ -209,6 +210,7 @@ model Diary {
   
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   reactions DiaryReaction[]
+  comments  DiaryComment[]
   
   @@index([userId, date])
   @@index([date])
@@ -228,6 +230,22 @@ model DiaryReaction {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([diaryId, userId]) // Mỗi user chỉ react 1 lần cho 1 diary
+}
+
+// Bình luận cho nhật ký ẩn danh
+model DiaryComment {
+  id        String   @id @default(uuid())
+  diaryId   String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  diary Diary @relation(fields: [diaryId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([diaryId])
+  @@index([userId])
 }
 
 // Nội dung hỗ trợ tinh thần
