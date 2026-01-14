@@ -2,6 +2,18 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+// Validate critical environment variables
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not defined in environment variables');
+}
 
 // Fix for crypto is not defined error in @nestjs/schedule
 if (typeof global.crypto === 'undefined') {

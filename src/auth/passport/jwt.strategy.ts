@@ -3,6 +3,10 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from 'src/prisma.service';
 import { AuthService } from '../auth.service';
+import * as dotenv from 'dotenv';
+
+// Load environment variables ASAP
+dotenv.config();
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -10,9 +14,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
   ) {
+    const jwtSecret = process.env.JWT_SECRET;
+    
+    if (!jwtSecret) {
+      console.error('❌ JWT_SECRET is missing!');
+      console.error('Current env:', {
+        NODE_ENV: process.env.NODE_ENV,
+        JWT_SECRET: process.env.JWT_SECRET ? '***exists***' : 'undefined',
+        DATABASE_URL: process.env.DATABASE_URL ? '***exists***' : 'undefined'
+      });
+      throw new Error('JWT_SECRET is not defined in environment variables. Please check .env file.');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: jwtSecret,
     });
   }
 
