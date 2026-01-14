@@ -97,7 +97,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   },
-  "prisma": {x prisma/seed/seed.ts" "module": "commonjs"
-    }
+  "prisma": {
+    "seed": "node dist/prisma/seed/seed.js"
   }
 }
