@@ -127,7 +127,7 @@ model LoginHistory {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ipAddress String?
-  userAgent String?
+  userAgent String?  @db.Text
   device    String?
   location  String? // Optional: city, country info if using IP geo service
   createdAt DateTime @default(now())
