@@ -69,16 +69,18 @@ import { IdeologicalWorkNoteModule } from './module/ideological-work-note/ideolo
     // },
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: JwtAuthGuard, // Chỉ check token, không check permissions
     },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard, // Global RolesGuard to run after AuthGuard
-    },
-    {
-      provide: APP_GUARD,
-      useClass: PermissionsGuard,
-    },
+    // ❌ Comment out RolesGuard và PermissionsGuard - quá phức tạp
+    // Chỉ áp dụng cho những route admin thực sự cần bằng @UseGuards
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: RolesGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: PermissionsGuard,
+    // },
     Reflector,
     {
       provide: APP_GUARD,

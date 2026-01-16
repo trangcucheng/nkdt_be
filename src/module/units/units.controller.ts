@@ -76,13 +76,12 @@ export class UnitsController {
 
   @Put('/update-unit')
   @Permissions('UPDATE_UNIT')
-  async updateUnit(@Body() updateUnitDTO: UpdateUnitDTO, @Request() req: any) {
-    const { id } = req.params;
-    if (!id) {
+  async updateUnit(@Body() updateUnitDTO: UpdateUnitDTO, @Query('unitId') unitId: number, @Request() req: any) {
+    if (!unitId) {
       throw new BadRequestException('Unit ID is required');
     }
     return this.unitService.updateUnit({
-      where: { id: Number(id) },
+      where: { id: Number(unitId) },
       data: updateUnitDTO,
     });
   }

@@ -355,4 +355,30 @@ export class DiaryController {
   deleteComment(@Param('commentId') commentId: string, @Request() req) {
     return this.diaryService.deleteComment(commentId, req.user.id, req.user.roles || []);
   }
+
+  // ==================== ADMIN APIs ====================
+  
+  @Get('admin/anonymous-by-unit')
+  @ApiOperation({
+    summary: '[Admin] Xem nhật ký ẩn danh theo đơn vị',
+    description: 'Admin xem nội dung nhật ký ẩn danh được nhóm theo đơn vị để nắm tâm lý chung, không hiển thị thông tin người viết'
+  })
+  @ApiQuery({ name: 'unitId', required: false, description: 'Lọc theo đơn vị cụ thể' })
+  @ApiQuery({ name: 'emotionStatus', required: false, description: 'Lọc theo cảm xúc: VERY_BAD, BAD, NEUTRAL, GOOD, VERY_GOOD' })
+  @ApiQuery({ name: 'startDate', required: false, description: 'Ngày bắt đầu (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'endDate', required: false, description: 'Ngày kết thúc (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'page', required: false, description: 'Trang (mặc định 1)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Số bản ghi/trang (mặc định 20)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách nhật ký ẩn danh theo đơn vị thành công',
+  })
+  getAnonymousDiariesByUnit(@Query() query, @Request() req) {
+    // Chỉ admin mới có quyền xem
+    const isAdmin = req.user.roles?.includes('ADMIN');
+    if (!isAdmin) {
+      throw new Error('Only admin can access this endpoint');
+    }
+    return this.diaryService.getAnonymousDiariesByUnit(query);
+  }
 }

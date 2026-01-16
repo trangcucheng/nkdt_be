@@ -42,9 +42,24 @@ export class CustomAuthGuard implements CanActivate {
       });
       console.log('payload...', JSON.stringify(payload));
 
-      // 🔥 Check user exists & blocked status
+      // 🔥 Check user exists & blocked status + load roles and permissions
       const user = await this.prisma.user.findUnique({
         where: { id: payload.id },
+        include: {
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -55,7 +70,20 @@ export class CustomAuthGuard implements CanActivate {
         throw new UnauthorizedException('User is blocked');
       }
 
-      request['user'] = user; // attach full user object
+      // Map roles (handle case where userRoles might not exist)
+      const roles = user.userRoles?.map((ur) => ur.role.name) || [];
+
+      // Map permissions
+      const permissions = user.userRoles?.flatMap((ur) =>
+        ur.role.rolePermissions.map((rp) => rp.permission.name),
+      ) || [];
+
+      // Attach user with roles and permissions
+      request['user'] = {
+        ...user,
+        roles,
+        permissions,
+      };
 
       // Optional: check token purpose
       if (payload.purpose && payload.purpose === 'reset') {

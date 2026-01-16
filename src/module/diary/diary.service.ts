@@ -11,7 +11,7 @@ import { UpdateDiaryDto } from './dto/update-diary.dto';
 import { GetDiariesQueryDto } from './dto/get-diaries-query.dto';
 import { CreateDiaryReactionDto } from './dto/create-diary-reaction.dto';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
-import { PrivacyLevel } from '@prisma/client';
+import { PrivacyLevel, EmotionStatus } from '@prisma/client';
 import { getPromptOfTheDay, getRandomPrompt, getPromptsByCategory } from './constants/guided-prompts';
 
 @Injectable()
@@ -665,5 +665,126 @@ export class DiaryService {
     });
 
     return { message: 'Xóa bình luận thành công' };
+  }
+
+  /**
+   * [Admin] Lấy danh sách nhật ký ẩn danh theo đơn vị
+   * Không hiển thị thông tin người viết, chỉ hiển thị đơn vị và nội dung
+   */
+  async getAnonymousDiariesByUnit(query: any) {
+    const {
+      unitId,
+      emotionStatus,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 20,
+    } = query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const take = parseInt(limit);
+
+    // Build where clause với proper typing
+    const where: any = {
+      privacyLevel: {
+        in: [PrivacyLevel.ANONYMOUS_SHARE, PrivacyLevel.STATISTICS_ONLY],
+      },
+    };
+
+    // Filter by emotion - đảm bảo type an toàn
+    if (emotionStatus) {
+      where.emotionStatus = emotionStatus; // Frontend đã gửi đúng enum value
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999); // Set to end of day
+        where.date.lte = endDateTime;
+      }
+    }
+
+    // Filter by unit
+    if (unitId) {
+      where.user = {
+        unitId: parseInt(unitId),
+      };
+    }
+
+    const [diaries, total] = await Promise.all([
+      this.prisma.diary.findMany({
+        where,
+        skip,
+        take,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          user: {
+            select: {
+              unitId: true,
+              unit: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
+            },
+          },
+          reactions: {
+            select: {
+              reactionType: true,
+            },
+          },
+          comments: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      }),
+      this.prisma.diary.count({ where }),
+    ]);
+
+    // Format response - ẨN thông tin cá nhân, chỉ giữ đơn vị
+    const formattedDiaries = diaries.map((diary) => ({
+      id: diary.id,
+      content: diary.content,
+      emotionStatus: diary.emotionStatus,
+      hashtags: diary.hashtags,
+      date: diary.date,
+      createdAt: diary.createdAt,
+      privacyLevel: diary.privacyLevel,
+      isGuided: diary.isGuided,
+      guidedPrompt: diary.guidedPrompt,
+      isQuickWrite: diary.isQuickWrite,
+      // ✅ Chỉ hiển thị thông tin đơn vị, KHÔNG hiển thị user
+      unit: diary.user.unit || null,
+      // Thống kê reactions
+      reactionStats: {
+        total: diary.reactions.length,
+        byType: diary.reactions.reduce((acc, r) => {
+          acc[r.reactionType] = (acc[r.reactionType] || 0) + 1;
+          return acc;
+        }, {}),
+      },
+      commentsCount: diary.comments.length,
+    }));
+
+    return {
+      data: formattedDiaries,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
+    };
   }
 }
