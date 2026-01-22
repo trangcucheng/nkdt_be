@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import { IsOptional, IsNumberString, IsEnum } from 'class-validator';
+import { IsOptional, IsNumberString, IsString } from 'class-validator';
 
 export class GetAllUsersDto {
   @ApiPropertyOptional({ type: String })
@@ -17,7 +16,8 @@ export class GetAllUsersDto {
   @IsOptional()
   orderBy?: string;
 
-  @ApiPropertyOptional({ type: String, enum: Role })
+  @ApiPropertyOptional({ type: String, description: 'Role name to filter by' })
   @IsOptional()
-  role?: Role;
+  @IsString()
+  role?: string;
 }

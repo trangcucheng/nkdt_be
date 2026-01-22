@@ -54,7 +54,7 @@ export class UsersController {
       page: Number(page),
       pageSize: Number(pageSize),
       orderBy: orderByObj,
-      role, // truyền role riêng, không gán vào where
+      role: role || undefined, // role name string for filtering
     });
   }
 
