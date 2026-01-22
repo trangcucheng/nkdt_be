@@ -18,7 +18,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoginHistoryModule } from './module/loginHistories/login-histories.module';
 import { BlacklistModule } from './log/blacklist/blacklist.module';
 import { CronCleanBlacklistService } from './log/blacklist/cron-clean-blacklist.service';
-import { BackupModule } from './backup/backup.module';
+// import { BackupModule } from './backup/backup.module'; // Disabled - using MySQL not PostgreSQL
 import { ExportsModule } from './module/exports_/exports.module';
 import { SignsModule } from './module/signs/signs.module';
 import { DiaryModule } from './module/diary/diary.module';
@@ -49,7 +49,7 @@ import { IdeologicalWorkNoteModule } from './module/ideological-work-note/ideolo
     PermissionsModule,
     BlacklistModule,
     LoginHistoryModule,
-    BackupModule,
+    // BackupModule, // Disabled - using MySQL not PostgreSQL
     ExportsModule,
     SignsModule,
     DiaryModule,

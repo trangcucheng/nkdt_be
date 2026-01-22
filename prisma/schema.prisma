@@ -42,12 +42,13 @@ model User {
   userRoles UserRole[]
 
   // Relations
-  unit                    Unit?                   @relation(fields: [unitId], references: [id])
+  unit                    Unit?                   @relation("UserUnit", fields: [unitId], references: [id])
   LoginHistory            LoginHistory[]
   diaries                 Diary[]
   diaryReactions          DiaryReaction[]
   diaryComments           DiaryComment[]
   supportContents         SupportContent[]
+  supportFilesUploaded    SupportFile[]          @relation("SupportFileUploader")
   ideologicalWorkNotes    IdeologicalWorkNote[]
   resolvedAlerts          EmotionAlert[]
 }
@@ -108,11 +109,11 @@ model Unit {
   updatedAt DateTime @updatedAt
   
   // Relations
-  users                User[]
-  ideologicalWorkNotes IdeologicalWorkNote[]
-  emotionStatistics    EmotionStatistics[]
-  hashtagTrends        HashtagTrend[]
-  emotionAlerts        EmotionAlert[]
+  users                User[]                @relation("UserUnit")
+  ideologicalWorkNotes IdeologicalWorkNote[] @relation("IdeologicalWorkNoteUnit")
+  emotionStatistics    EmotionStatistics[]   @relation("EmotionStatisticsUnit")
+  hashtagTrends        HashtagTrend[]        @relation("HashtagTrendUnit")
+  emotionAlerts        EmotionAlert[]        @relation("EmotionAlertUnit")
 }
 
 model Blacklist {
@@ -266,6 +267,29 @@ model SupportContent {
   @@index([isActive])
 }
 
+// File hỗ trợ tinh thần (PDF, Word)
+model SupportFile {
+  id            String          @id @default(uuid())
+  title         String
+  fileName      String          // Tên file gốc
+  filePath      String          // Đường dẫn file trên server
+  fileSize      BigInt          // Kích thước file (bytes)
+  fileType      String          // MIME type (application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+  category      SupportCategory
+  description   String?         @db.Text
+  uploadedBy    String
+  isActive      Boolean         @default(true)
+  downloadCount Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  uploader User @relation("SupportFileUploader", fields: [uploadedBy], references: [id])
+  
+  @@index([category])
+  @@index([isActive])
+  @@index([fileType])
+}
+
 // Ghi chú công tác tư tưởng của cán bộ quản lý
 model IdeologicalWorkNote {
   id                String   @id @default(uuid())
@@ -281,7 +305,7 @@ model IdeologicalWorkNote {
   updatedAt         DateTime @updatedAt
   
   manager User  @relation(fields: [managerId], references: [id])
-  unit    Unit? @relation(fields: [unitId], references: [id])
+  unit    Unit? @relation("IdeologicalWorkNoteUnit", fields: [unitId], references: [id])
   
   @@index([managerId])
   @@index([unitId])
@@ -298,7 +322,7 @@ model EmotionStatistics {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   
-  unit Unit? @relation(fields: [unitId], references: [id])
+  unit Unit? @relation("EmotionStatisticsUnit", fields: [unitId], references: [id])
   
   @@unique([unitId, date, emotionStatus])
   @@index([date])
@@ -315,7 +339,7 @@ model HashtagTrend {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  unit Unit? @relation(fields: [unitId], references: [id])
+  unit Unit? @relation("HashtagTrendUnit", fields: [unitId], references: [id])
   
   @@unique([hashtag, unitId, date])
   @@index([hashtag])
@@ -338,7 +362,7 @@ model EmotionAlert {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   
-  unit     Unit? @relation(fields: [unitId], references: [id])
+  unit     Unit? @relation("EmotionAlertUnit", fields: [unitId], references: [id])
   resolver User? @relation(fields: [resolvedBy], references: [id])
   
   @@index([unitId])
