@@ -15,7 +15,7 @@ import { CreateRoleDTO } from './dto/create-role.dto';
 import { UpdateRoleDTO } from './dto/update-role.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetAllRolesDTO } from './dto/pagination.dto';
-import { Prisma, Role_ } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { RolesGuard } from 'src/guard/roles.guard';
 import { Permissions } from 'src/decorator/permissions.decorator';
 
@@ -26,11 +26,11 @@ export class RolesController {
 
   @Get('/list-all-role')
   @Permissions('VIEW_ROLE')
-  async getAllRoles(@Query() query: GetAllRolesDTO): Promise<Role_[]> {
+  async getAllRoles(@Query() query: GetAllRolesDTO): Promise<Role[]> {
     const { page = '1', pageSize = '10', orderBy } = query;
 
     // Xử lý orderBy string (vd: 'createdAt:desc')
-    let orderByObj: Prisma.Role_OrderByWithRelationInput | undefined;
+    let orderByObj: Prisma.RoleOrderByWithRelationInput | undefined;
     if (orderBy) {
       orderByObj = {
         createdAt: orderBy === 'createdAt:desc' ? 'desc' : 'asc',
@@ -63,7 +63,7 @@ export class RolesController {
   }
 
   @Get('/detail-role')
-  async getRoleById(@Param('roleId') roleId: string): Promise<Role_ | null> {
+  async getRoleById(@Param('roleId') roleId: string): Promise<Role | null> {
     const role = await this.roleService.getRoleById(roleId);
     if (!role) {
       throw new NotFoundException('Role not found');

@@ -72,7 +72,7 @@ async function main() {
   // Tạo role Admin và gán toàn bộ permission
   const allPermissions = await prisma.permission.findMany();
 
-  const adminRole = await prisma.role_.upsert({
+  const adminRole = await prisma.role.upsert({
     where: { name: 'ADMIN' },
     update: {},
     create: {
@@ -89,7 +89,7 @@ async function main() {
   console.log('✅ Seeding Admin role complete.');
 
   // Tạo role USER mặc định không gán permission
-  await prisma.role_.upsert({
+  await prisma.role.upsert({
     where: { name: 'USER' },
     update: {},
     create: {
@@ -136,7 +136,7 @@ async function main() {
 
   const hashedClientPassword = await bcrypt.hash(clientPassword, 10);
 
-  const userRole = await prisma.role_.findUnique({
+  const userRole = await prisma.role.findUnique({
     where: { name: 'USER' },
   });
 

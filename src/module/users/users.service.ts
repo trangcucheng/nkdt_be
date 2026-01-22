@@ -150,7 +150,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     // Kiểm tra role
-    const role = await this.prisma.role_.findUnique({
+    const role = await this.prisma.role.findUnique({
       where: { id: roleId },
     });
     if (!role) throw new NotFoundException('Role not found');

@@ -31,7 +31,7 @@ export class AuthService {
       throw new BadRequestException('Invalid email format');
     }
     // Tìm role USER trước
-    const userRole = await this.prisma.role_.findUnique({
+    const userRole = await this.prisma.role.findUnique({
       where: { name: 'USER' },
     });
 
@@ -87,7 +87,7 @@ export class AuthService {
       include: {
         userRoles: {
           include: {
-            role: true, // lấy thông tin role từ UserRole -> Role_
+            role: true, // lấy thông tin role từ UserRole -> Role
           },
         },
       },

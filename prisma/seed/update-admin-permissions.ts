@@ -6,7 +6,7 @@ async function main() {
   console.log('🔄 Updating ADMIN permissions...');
 
   // Lấy role ADMIN
-  const adminRole = await prisma.role_.findUnique({
+  const adminRole = await prisma.role.findUnique({
     where: { name: 'ADMIN' },
     include: {
       rolePermissions: {
@@ -55,7 +55,7 @@ async function main() {
   console.log('✅ ADMIN permissions updated successfully!');
   
   // Verify
-  const updatedRole = await prisma.role_.findUnique({
+  const updatedRole = await prisma.role.findUnique({
     where: { name: 'ADMIN' },
     include: {
       rolePermissions: {
