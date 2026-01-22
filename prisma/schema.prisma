@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -14,106 +7,93 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
-  SUB_ADMIN
-  MANAGER
-  CONTRIBUTOR
-}
-
 model User {
-  id           String    @id @default(uuid())
-  firstName    String?
-  lastName     String?
-  email        String    @unique
-  password     String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastLogin    DateTime?
-  phoneNumber  String?   @unique
-  refreshToken String?   @db.Text // TEXT để chứa JWT dài
-  avatarUrl    String?
-  blocked      Boolean?
-  unitId       Int?      // Đơn vị công tác
+  id                   String                @id @default(uuid())
+  firstName            String?
+  lastName             String?
+  email                String                @unique
+  password             String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  lastLogin            DateTime?
+  phoneNumber          String?               @unique
+  refreshToken         String?               @db.Text
+  avatarUrl            String?
+  blocked              Boolean?
+  unitId               Int?
+  diaries              Diary[]
+  diaryComments        DiaryComment[]
+  diaryReactions       DiaryReaction[]
+  resolvedAlerts       EmotionAlert[]
+  ideologicalWorkNotes IdeologicalWorkNote[]
+  LoginHistory         LoginHistory[]
+  supportContents      SupportContent[]
+  supportFilesUploaded SupportFile[]         @relation("SupportFileUploader")
+  unit                 Unit?                 @relation("UserUnit", fields: [unitId], references: [id])
+  userRoles            UserRole[]
 
-  // role Role @default(USER)
-  userRoles UserRole[]
-
-  // Relations
-  unit                    Unit?                   @relation("UserUnit", fields: [unitId], references: [id])
-  LoginHistory            LoginHistory[]
-  diaries                 Diary[]
-  diaryReactions          DiaryReaction[]
-  diaryComments           DiaryComment[]
-  supportContents         SupportContent[]
-  supportFilesUploaded    SupportFile[]          @relation("SupportFileUploader")
-  ideologicalWorkNotes    IdeologicalWorkNote[]
-  resolvedAlerts          EmotionAlert[]
+  @@index([unitId], map: "User_unitId_fkey")
 }
 
 model Role_ {
   id              String           @id @default(uuid())
   name            String           @unique
   description     String?
-  userRoles       UserRole[]
-  rolePermissions RolePermission[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
 }
 
 model Permission {
   id              String           @id @default(uuid())
   name            String           @unique
   description     String?
-  rolePermissions RolePermission[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
 }
 
 model RolePermission {
-  id           String @id @default(uuid())
+  id           String     @id @default(uuid())
   roleId       String
   permissionId String
-
-  role       Role_      @relation(fields: [roleId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role_      @relation(fields: [roleId], references: [id])
 
   @@unique([roleId, permissionId])
+  @@index([permissionId], map: "RolePermission_permissionId_fkey")
 }
 
 model UserRole {
   id     String @id @default(uuid())
   userId String
   roleId String
-
-  user User  @relation(fields: [userId], references: [id])
-  role Role_ @relation(fields: [roleId], references: [id])
+  role   Role_  @relation(fields: [roleId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, roleId])
+  @@index([roleId], map: "UserRole_roleId_fkey")
 }
 
 model Unit {
-  id          Int     @id @default(autoincrement())
-  code        String  @unique
-  name        String
-  description String?
-  status      String? // Active / Inactive
-
-  parentId Int?
-  parent   Unit?  @relation("UnitHierarchy", fields: [parentId], references: [id])
-  children Unit[] @relation("UnitHierarchy")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  users                User[]                @relation("UserUnit")
-  ideologicalWorkNotes IdeologicalWorkNote[] @relation("IdeologicalWorkNoteUnit")
+  id                   Int                   @id @default(autoincrement())
+  code                 String                @unique
+  name                 String
+  description          String?
+  status               String?
+  parentId             Int?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  emotionAlerts        EmotionAlert[]        @relation("EmotionAlertUnit")
   emotionStatistics    EmotionStatistics[]   @relation("EmotionStatisticsUnit")
   hashtagTrends        HashtagTrend[]        @relation("HashtagTrendUnit")
-  emotionAlerts        EmotionAlert[]        @relation("EmotionAlertUnit")
+  ideologicalWorkNotes IdeologicalWorkNote[] @relation("IdeologicalWorkNoteUnit")
+  parent               Unit?                 @relation("UnitHierarchy", fields: [parentId], references: [id])
+  children             Unit[]                @relation("UnitHierarchy")
+  users                User[]                @relation("UserUnit")
+
+  @@index([parentId], map: "Unit_parentId_fkey")
 }
 
 model Blacklist {
@@ -126,12 +106,14 @@ model Blacklist {
 model LoginHistory {
   id        String   @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ipAddress String?
   userAgent String?  @db.Text
   device    String?
-  location  String? // Optional: city, country info if using IP geo service
+  location  String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "LoginHistory_userId_fkey")
 }
 
 model SignLog {
@@ -145,9 +127,170 @@ model SignLog {
   verifiedAt DateTime @default(now())
 }
 
-// ======== DIARY SYSTEM MODELS ========
+model Diary {
+  id            String          @id @default(uuid())
+  userId        String
+  content       String          @db.Text
+  emotionStatus EmotionStatus
+  hashtags      Json?
+  privacyLevel  PrivacyLevel    @default(PRIVATE)
+  date          DateTime
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  guidedPrompt  String?         @db.Text
+  isGuided      Boolean         @default(false)
+  isQuickWrite  Boolean         @default(false)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments      DiaryComment[]
+  reactions     DiaryReaction[]
 
-// Trạng thái cảm xúc
+  @@index([userId, date])
+  @@index([date])
+  @@index([emotionStatus])
+  @@index([privacyLevel])
+}
+
+model DiaryReaction {
+  id           String       @id @default(uuid())
+  diaryId      String
+  userId       String
+  reactionType ReactionType
+  createdAt    DateTime     @default(now())
+  diary        Diary        @relation(fields: [diaryId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([diaryId, userId])
+  @@index([userId], map: "DiaryReaction_userId_fkey")
+}
+
+model DiaryComment {
+  id        String   @id @default(uuid())
+  diaryId   String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  diary     Diary    @relation(fields: [diaryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([diaryId])
+  @@index([userId])
+}
+
+model SupportContent {
+  id        String          @id @default(uuid())
+  title     String
+  content   String          @db.Text
+  category  SupportCategory
+  createdBy String
+  isActive  Boolean         @default(true)
+  viewCount Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  creator   User            @relation(fields: [createdBy], references: [id])
+
+  @@index([category])
+  @@index([isActive])
+  @@index([createdBy], map: "SupportContent_createdBy_fkey")
+}
+
+model SupportFile {
+  id            String          @id @default(uuid())
+  title         String
+  fileName      String
+  filePath      String
+  fileSize      BigInt
+  fileType      String
+  category      SupportCategory
+  description   String?         @db.Text
+  uploadedBy    String
+  isActive      Boolean         @default(true)
+  downloadCount Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  uploader      User            @relation("SupportFileUploader", fields: [uploadedBy], references: [id])
+
+  @@index([category])
+  @@index([isActive])
+  @@index([fileType])
+  @@index([uploadedBy], map: "SupportFile_uploadedBy_fkey")
+}
+
+model IdeologicalWorkNote {
+  id               String   @id @default(uuid())
+  managerId        String
+  unitId           Int?
+  title            String
+  content          String   @db.Text
+  activities       String   @db.Text
+  effectEvaluation String?  @db.Text
+  targetAudience   String?
+  period           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  manager          User     @relation(fields: [managerId], references: [id])
+  unit             Unit?    @relation("IdeologicalWorkNoteUnit", fields: [unitId], references: [id])
+
+  @@index([managerId])
+  @@index([unitId])
+  @@index([createdAt])
+}
+
+model EmotionStatistics {
+  id            String        @id @default(uuid())
+  unitId        Int?
+  date          DateTime
+  emotionStatus EmotionStatus
+  count         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  unit          Unit?         @relation("EmotionStatisticsUnit", fields: [unitId], references: [id])
+
+  @@unique([unitId, date, emotionStatus])
+  @@index([date])
+  @@index([emotionStatus])
+}
+
+model HashtagTrend {
+  id        String   @id @default(uuid())
+  hashtag   String
+  unitId    Int?
+  count     Int      @default(1)
+  date      DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  unit      Unit?    @relation("HashtagTrendUnit", fields: [unitId], references: [id])
+
+  @@unique([hashtag, unitId, date])
+  @@index([hashtag])
+  @@index([date])
+  @@index([count])
+  @@index([unitId], map: "HashtagTrend_unitId_fkey")
+}
+
+model EmotionAlert {
+  id             String     @id @default(uuid())
+  unitId         Int?
+  alertLevel     AlertLevel
+  title          String
+  description    String     @db.Text
+  isResolved     Boolean    @default(false)
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  actions        String?    @db.Text
+  resolutionNote String?    @db.Text
+  resolver       User?      @relation(fields: [resolvedBy], references: [id])
+  unit           Unit?      @relation("EmotionAlertUnit", fields: [unitId], references: [id])
+
+  @@index([unitId])
+  @@index([alertLevel])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([resolvedBy], map: "EmotionAlert_resolvedBy_fkey")
+}
+
 enum EmotionStatus {
   VERY_HAPPY
   HAPPY
@@ -161,212 +304,31 @@ enum EmotionStatus {
   TIRED
 }
 
-// Mức độ riêng tư
 enum PrivacyLevel {
-  PRIVATE           // Chỉ cá nhân xem
-  ANONYMOUS_SHARE   // Chia sẻ ẩn danh
-  STATISTICS_ONLY   // Chỉ dùng để thống kê
+  PRIVATE
+  ANONYMOUS_SHARE
+  STATISTICS_ONLY
 }
 
-// Loại phản ứng cảm xúc
 enum ReactionType {
-  EMPATHY      // Đồng cảm
-  SUPPORT      // Hỗ trợ
-  ENCOURAGE    // Động viên
-  UNDERSTAND   // Thấu hiểu
+  EMPATHY
+  SUPPORT
+  ENCOURAGE
+  UNDERSTAND
 }
 
-// Danh mục nội dung hỗ trợ
 enum SupportCategory {
-  EMOTION_MANAGEMENT    // Quản lý cảm xúc
-  ADAPTATION_SKILLS     // Kỹ năng thích nghi
-  MOTIVATION           // Động viên tinh thần
-  STUDY_TIPS          // Mẹo học tập
-  WORK_SKILLS         // Kỹ năng công tác
-  HEALTH_WELLNESS     // Sức khỏe tinh thần
+  EMOTION_MANAGEMENT
+  ADAPTATION_SKILLS
+  MOTIVATION
+  STUDY_TIPS
+  WORK_SKILLS
+  HEALTH_WELLNESS
 }
 
-// Mức độ cảnh báo
 enum AlertLevel {
   LOW
   MEDIUM
   HIGH
   CRITICAL
-}
-
-// Nhật ký cá nhân
-model Diary {
-  id            String       @id @default(uuid())
-  userId        String
-  content       String       @db.Text
-  emotionStatus EmotionStatus
-  hashtags      Json?        // Lưu trữ mảng hashtag dưới dạng JSON
-  privacyLevel  PrivacyLevel @default(PRIVATE)
-  date          DateTime     // Ngày của nhật ký
-  isGuided      Boolean      @default(false) // Nhật ký dẫn dắt hay tự do
-  guidedPrompt  String?      @db.Text // Câu hỏi gợi mở nếu là nhật ký dẫn dắt
-  isQuickWrite  Boolean      @default(false) // Nhật ký viết nhanh 60 giây
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reactions DiaryReaction[]
-  comments  DiaryComment[]
-  
-  @@index([userId, date])
-  @@index([date])
-  @@index([emotionStatus])
-  @@index([privacyLevel])
-}
-
-// Phản ứng với nhật ký ẩn danh
-model DiaryReaction {
-  id           String       @id @default(uuid())
-  diaryId      String
-  userId       String
-  reactionType ReactionType
-  createdAt    DateTime     @default(now())
-  
-  diary Diary @relation(fields: [diaryId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([diaryId, userId]) // Mỗi user chỉ react 1 lần cho 1 diary
-}
-
-// Bình luận cho nhật ký ẩn danh
-model DiaryComment {
-  id        String   @id @default(uuid())
-  diaryId   String
-  userId    String
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  diary Diary @relation(fields: [diaryId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([diaryId])
-  @@index([userId])
-}
-
-// Nội dung hỗ trợ tinh thần
-model SupportContent {
-  id          String          @id @default(uuid())
-  title       String
-  content     String          @db.Text
-  category    SupportCategory
-  createdBy   String
-  isActive    Boolean         @default(true)
-  viewCount   Int            @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  
-  creator User @relation(fields: [createdBy], references: [id])
-  
-  @@index([category])
-  @@index([isActive])
-}
-
-// File hỗ trợ tinh thần (PDF, Word)
-model SupportFile {
-  id            String          @id @default(uuid())
-  title         String
-  fileName      String          // Tên file gốc
-  filePath      String          // Đường dẫn file trên server
-  fileSize      BigInt          // Kích thước file (bytes)
-  fileType      String          // MIME type (application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document)
-  category      SupportCategory
-  description   String?         @db.Text
-  uploadedBy    String
-  isActive      Boolean         @default(true)
-  downloadCount Int             @default(0)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  
-  uploader User @relation("SupportFileUploader", fields: [uploadedBy], references: [id])
-  
-  @@index([category])
-  @@index([isActive])
-  @@index([fileType])
-}
-
-// Ghi chú công tác tư tưởng của cán bộ quản lý
-model IdeologicalWorkNote {
-  id                String   @id @default(uuid())
-  managerId         String
-  unitId            Int?
-  title             String
-  content           String   @db.Text
-  activities        String   @db.Text // Hoạt động đã triển khai
-  effectEvaluation  String?  @db.Text // Đánh giá hiệu quả
-  targetAudience    String?  // Đối tượng hướng đến
-  period            String?  // Thời kỳ thực hiện
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  manager User  @relation(fields: [managerId], references: [id])
-  unit    Unit? @relation("IdeologicalWorkNoteUnit", fields: [unitId], references: [id])
-  
-  @@index([managerId])
-  @@index([unitId])
-  @@index([createdAt])
-}
-
-// Thống kê cảm xúc theo đơn vị và thời gian
-model EmotionStatistics {
-  id            String        @id @default(uuid())
-  unitId        Int?
-  date          DateTime
-  emotionStatus EmotionStatus
-  count         Int           @default(0)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
-  unit Unit? @relation("EmotionStatisticsUnit", fields: [unitId], references: [id])
-  
-  @@unique([unitId, date, emotionStatus])
-  @@index([date])
-  @@index([emotionStatus])
-}
-
-// Chủ đề/hashtag phổ biến
-model HashtagTrend {
-  id        String   @id @default(uuid())
-  hashtag   String
-  unitId    Int?
-  count     Int      @default(1)
-  date      DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  unit Unit? @relation("HashtagTrendUnit", fields: [unitId], references: [id])
-  
-  @@unique([hashtag, unitId, date])
-  @@index([hashtag])
-  @@index([date])
-  @@index([count])
-}
-
-// Cảnh báo xu hướng tiêu cực
-model EmotionAlert {
-  id             String     @id @default(uuid())
-  unitId         Int?
-  alertLevel     AlertLevel
-  title          String
-  description    String     @db.Text
-  isResolved     Boolean    @default(false)
-  resolvedBy     String?
-  resolvedAt     DateTime?
-  resolutionNote String?    @db.Text
-  actions        String?    @db.Text
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  
-  unit     Unit? @relation("EmotionAlertUnit", fields: [unitId], references: [id])
-  resolver User? @relation(fields: [resolvedBy], references: [id])
-  
-  @@index([unitId])
-  @@index([alertLevel])
-  @@index([isResolved])
-  @@index([createdAt])
 }
