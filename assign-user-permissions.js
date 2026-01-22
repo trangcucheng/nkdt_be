@@ -17,7 +17,7 @@ const USER_PERMISSIONS = [
 async function assignPermissionsToUserRole() {
   try {
     // 1. Tìm role USER
-    const userRole = await prisma.role_.findUnique({
+    const userRole = await prisma.Role.findUnique({
       where: { name: 'USER' },
       include: {
         rolePermissions: {
@@ -66,7 +66,7 @@ async function assignPermissionsToUserRole() {
     console.log(`\n✅ Đã gán ${permissionsToAssign.length} permissions cho role USER`);
 
     // 6. Verify
-    const updatedRole = await prisma.role_.findUnique({
+    const updatedRole = await prisma.Role.findUnique({
       where: { name: 'USER' },
       include: {
         rolePermissions: {

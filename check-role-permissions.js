@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function checkRolePermissions() {
   try {
-    const roles = await prisma.role_.findMany({
+    const roles = await prisma.Role.findMany({
       include: {
         rolePermissions: {
           include: {
