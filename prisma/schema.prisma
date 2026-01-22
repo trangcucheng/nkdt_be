@@ -35,7 +35,7 @@ model User {
   @@index([unitId], map: "User_unitId_fkey")
 }
 
-model Role_ {
+model Role {
   id              String           @id @default(uuid())
   name            String           @unique
   description     String?
@@ -43,6 +43,8 @@ model Role_ {
   updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
   userRoles       UserRole[]
+  
+  @@map("Role")
 }
 
 model Permission {
@@ -59,7 +61,7 @@ model RolePermission {
   roleId       String
   permissionId String
   permission   Permission @relation(fields: [permissionId], references: [id])
-  role         Role_      @relation(fields: [roleId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
 
   @@unique([roleId, permissionId])
   @@index([permissionId], map: "RolePermission_permissionId_fkey")
@@ -69,7 +71,7 @@ model UserRole {
   id     String @id @default(uuid())
   userId String
   roleId String
-  role   Role_  @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
 
   @@unique([userId, roleId])
