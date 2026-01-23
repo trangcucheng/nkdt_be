@@ -724,7 +724,18 @@ export class DiaryService {
         orderBy: {
           createdAt: 'desc',
         },
-        include: {
+        select: {
+          id: true,
+          content: true,
+          emotionStatus: true,
+          hashtags: true,
+          date: true,
+          createdAt: true,
+          privacyLevel: true,
+          isGuided: true,
+          guidedPrompt: true,
+          isQuickWrite: true,
+          userId: true,
           user: {
             select: {
               unitId: true,
@@ -764,8 +775,8 @@ export class DiaryService {
       isGuided: diary.isGuided,
       guidedPrompt: diary.guidedPrompt,
       isQuickWrite: diary.isQuickWrite,
-      // ✅ Chỉ hiển thị thông tin đơn vị, KHÔNG hiển thị user
-      unit: diary.user.unit || null,
+      // ✅ Chỉ hiển thị thông tin đơn vị, KHÔNG hiển thị user - handle null safely
+      unit: diary.user?.unit || null,
       // Thống kê reactions
       reactionStats: {
         total: diary.reactions.length,
