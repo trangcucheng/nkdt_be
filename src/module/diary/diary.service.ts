@@ -713,12 +713,11 @@ export class DiaryService {
     if (unitId) {
       where.user = {
         unitId: parseInt(unitId),
-        isNot: null, // Đảm bảo user tồn tại
       };
     } else {
       // Khi không filter unitId, vẫn phải đảm bảo user không null
       where.user = {
-        isNot: null,
+        is: {}, // User relation tồn tại (không null)
       };
     }
 
