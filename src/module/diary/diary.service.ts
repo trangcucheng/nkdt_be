@@ -709,10 +709,16 @@ export class DiaryService {
       }
     }
 
-    // Filter by unit
+    // Filter by unit - LUÔN LUÔN đảm bảo userId không null
     if (unitId) {
       where.user = {
         unitId: parseInt(unitId),
+        isNot: null, // Đảm bảo user tồn tại
+      };
+    } else {
+      // Khi không filter unitId, vẫn phải đảm bảo user không null
+      where.user = {
+        isNot: null,
       };
     }
 
