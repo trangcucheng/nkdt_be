@@ -541,7 +541,7 @@ export class DiaryService {
   // ========== COMMENT METHODS ==========
 
   /**
-   * Lấy danh sách bình luận của một nhật ký
+   * Lấy danh sách bình luận của một nhật ký (ẩn danh)
    */
   async getComments(diaryId: string) {
     const comments = await this.prisma.diaryComment.findMany({
@@ -559,19 +559,75 @@ export class DiaryService {
         updatedAt: true,
         diaryId: true,
         userId: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Trả về bình luận ẩn danh - không hiển thị thông tin user
+    return comments.map((comment, index) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      diaryId: comment.diaryId,
+      userId: comment.userId,
+      // Hiển thị ẩn danh
+      user: {
+        id: 'anonymous',
+        firstName: `Người dùng`,
+        lastName: `#${index + 1}`,
+        avatarUrl: null,
+      },
+    }));
+  }
+
+  /**
+   * [Admin] Lấy danh sách bình luận kèm thông tin đơn vị
+   */
+  async getCommentsWithUnit(diaryId: string) {
+    const comments = await this.prisma.diaryComment.findMany({
+      where: { 
+        diaryId,
+        user: {
+          is: {},
+        },
+      },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        diaryId: true,
+        userId: true,
         user: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
-            avatarUrl: true,
+            unitId: true,
+            unit: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    return comments;
+    // Trả về bình luận kèm đơn vị cho admin
+    return comments.map((comment, index) => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      diaryId: comment.diaryId,
+      userId: comment.userId,
+      // Hiển thị ẩn danh + đơn vị cho admin
+      anonymousName: `Người dùng #${index + 1}`,
+      unit: comment.user?.unit || null,
+    }));
   }
 
   /**

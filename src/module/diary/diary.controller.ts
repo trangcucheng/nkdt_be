@@ -381,4 +381,23 @@ export class DiaryController {
     }
     return this.diaryService.getAnonymousDiariesByUnit(query);
   }
+
+  @Get('admin/comments/:diaryId')
+  @ApiOperation({
+    summary: '[Admin] Xem bình luận kèm đơn vị',
+    description: 'Admin xem bình luận của nhật ký ẩn danh kèm thông tin đơn vị người bình luận'
+  })
+  @ApiParam({ name: 'diaryId', description: 'ID của nhật ký' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách bình luận kèm đơn vị thành công',
+  })
+  getCommentsWithUnit(@Param('diaryId') diaryId: string, @Request() req) {
+    // Chỉ admin mới có quyền xem
+    const isAdmin = req.user.roles?.includes('ADMIN');
+    if (!isAdmin) {
+      throw new Error('Only admin can access this endpoint');
+    }
+    return this.diaryService.getCommentsWithUnit(diaryId);
+  }
 }
