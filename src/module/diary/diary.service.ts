@@ -546,7 +546,13 @@ export class DiaryService {
   async getComments(diaryId: string) {
     const comments = await this.prisma.diaryComment.findMany({
       where: { diaryId },
-      include: {
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        diaryId: true,
+        userId: true,
         user: {
           select: {
             id: true,
@@ -559,7 +565,16 @@ export class DiaryService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return comments;
+    // Handle null user safely
+    return comments.map(comment => ({
+      ...comment,
+      user: comment.user || {
+        id: 'unknown',
+        firstName: 'Người dùng',
+        lastName: 'đã xóa',
+        avatarUrl: null,
+      },
+    }));
   }
 
   /**
