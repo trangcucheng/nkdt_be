@@ -689,10 +689,6 @@ export class DiaryService {
       privacyLevel: {
         in: [PrivacyLevel.ANONYMOUS_SHARE, PrivacyLevel.STATISTICS_ONLY],
       },
-      // Chỉ lấy diary có user tồn tại
-      userId: {
-        not: null,
-      },
     };
 
     // Filter by emotion - đảm bảo type an toàn
