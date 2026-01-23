@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEmail,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -29,20 +30,38 @@ export class UpdateUserDTO {
   @ApiProperty({
     description: 'Email of the user',
     example: 'vietducqb113@gmail.com',
-    required: true,
+    required: false,
   })
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  email?: string;
 
   @ApiProperty({
-    description: 'Password of the user',
+    description: 'Password of the user (only provide if changing password)',
     example: '1',
-    required: true,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  password: string;
+  password?: string;
+
+  @ApiProperty({
+    description: 'Phone number of the user',
+    example: '0912345678',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'Unit ID of the user',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  unitId?: number;
 
   @ApiProperty({
     description: 'Blocked status of the user',

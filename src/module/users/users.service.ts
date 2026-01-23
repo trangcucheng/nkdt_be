@@ -98,11 +98,16 @@ export class UsersService {
     updateUserDto: UpdateUserDTO,
   ): Promise<User> {
     const { where } = params;
+    
+    // Nếu có password, hash nó trước khi update
+    const updateData: any = { ...updateUserDto };
+    if (updateUserDto.password) {
+      updateData.password = await this.encryptPassword(updateUserDto.password, 10);
+    }
+    
     return this.prisma.user.update({
       where,
-      data: {
-        ...updateUserDto,
-      },
+      data: updateData,
     });
   }
 
