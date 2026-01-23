@@ -690,8 +690,8 @@ export class DiaryService {
         in: [PrivacyLevel.ANONYMOUS_SHARE, PrivacyLevel.STATISTICS_ONLY],
       },
       // Chỉ lấy diary có user tồn tại
-      user: {
-        isNot: null,
+      userId: {
+        not: null,
       },
     };
 
@@ -716,7 +716,6 @@ export class DiaryService {
     // Filter by unit
     if (unitId) {
       where.user = {
-        ...where.user,
         unitId: parseInt(unitId),
       };
     }
